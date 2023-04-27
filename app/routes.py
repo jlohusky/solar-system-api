@@ -1,18 +1,20 @@
-from flask import Blueprint, jsonify, abort, make_response
+from flask import Blueprint, jsonify, abort, make_response, request
+from app.models.planet import Planet
+from app import db
 
-class Planet():
-    def __init__(self, id, name, description, is_planet):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.is_planet = is_planet
+# class Planet():
+#     def __init__(self, id, name, description, is_planet):
+#         self.id = id
+#         self.name = name
+#         self.description = description
+#         self.is_planet = is_planet
 
-planets = [
-    Planet(1, "Earth", "We live here.", True),
-    Planet(2, "Mercury", "The smallest planet.", True),
-    Planet(3, "Mars", "Dusty cold desert world.", True),
-    Planet(4, "Pluto", "Dwarf planet.", False)
-]
+# planets = [
+#     Planet(1, "Earth", "We live here.", True),
+#     Planet(2, "Mercury", "The smallest planet.", True),
+#     Planet(3, "Mars", "Dusty cold desert world.", True),
+#     Planet(4, "Pluto", "Dwarf planet.", False)
+# ]
 
 def validate_planet(planet_id):
     try:
@@ -20,7 +22,9 @@ def validate_planet(planet_id):
     except:
         abort(make_response({'msg': f"invalid id {planet_id}"}, 400))
     
-    for planet in planets:
+    all_planets = Planet.query.all()
+
+    for planet in all_planets:
         if planet.id == planet_id:
             return planet
     
@@ -30,8 +34,12 @@ planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
 
 @planets_bp.route("", methods=['GET'])
 def handle_planets():
-    planets_as_dict = [vars(planet) for planet in planets]
-    return jsonify(planets_as_dict), 200
+    all_planets = Planet.query.all()
+
+    planet_response = []
+    for planet in all_planets:
+        planet_response.append(planet.to_dict())
+    return jsonify(planet_response), 200
 
 @planets_bp.route("/<planet_id>", methods=['GET'])
 def handle_planet(planet_id):
@@ -39,5 +47,22 @@ def handle_planet(planet_id):
     
     return {
         "id": planet.id,
-        "name": planet.name
+        "name": planet.name,
+        "description": planet.description,
+        "is_planet": planet.is_planet
     }, 200
+
+@planets_bp.route("", methods=['POST'])
+def create_planet():
+    request_body = request.get_json()
+    new_planet = Planet(name=request_body["name"], description=request_body["description"], is_planet=request_body["is_planet"])
+
+    db.session.add(new_planet)
+    db.session.commit()
+
+    return {
+        "id": new_planet.id,
+        "name": new_planet.name,
+        "description": new_planet.description,
+        "is_planet": new_planet.is_planet
+    }, 201
