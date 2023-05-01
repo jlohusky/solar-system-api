@@ -9,12 +9,6 @@ def validate_planet(planet_id):
         abort(make_response({'msg': f"invalid id {planet_id}"}, 400))
     
     planet = Planet.query.get(planet_id)
-
-    # all_planets = Planet.query.all()
-
-    # for planet in all_planets:
-    #     if planet.id == planet_id:
-    #         return planet
     
     return planet if planet else abort(make_response({'msg': f"No planet with id {planet_id}"}, 404))
 
