@@ -8,13 +8,15 @@ def validate_planet(planet_id):
     except:
         abort(make_response({'msg': f"invalid id {planet_id}"}, 400))
     
-    all_planets = Planet.query.all()
+    planet = Planet.query.get(planet_id)
 
-    for planet in all_planets:
-        if planet.id == planet_id:
-            return planet
+    # all_planets = Planet.query.all()
+
+    # for planet in all_planets:
+    #     if planet.id == planet_id:
+    #         return planet
     
-    return abort(make_response({'msg': f"No planet with id {planet_id}"}, 404))
+    return planet if planet else abort(make_response({'msg': f"No planet with id {planet_id}"}, 404))
 
 planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
 
@@ -52,3 +54,26 @@ def create_planet():
         "description": new_planet.description,
         "is_planet": new_planet.is_planet
     }, 201
+
+@planets_bp.route("/<planet_id>", methods=['PUT'])
+def update_one_planet(planet_id):
+    request_body = request.get_json()
+
+    planet_to_update = validate_planet(planet_id)
+
+    planet_to_update.name = request_body["name"]
+    planet_to_update.description = request_body["description"]
+    planet_to_update.is_planet = request_body["is_planet"]
+
+    db.session.commit()
+
+    return planet_to_update.to_dict(), 200
+
+@planets_bp.route("/<planet_id>", methods=['DELETE'])
+def delete_one_planet(planet_id):
+    planet_to_delete = validate_planet(planet_id)
+
+    db.session.delete(planet_to_delete)
+    db.session.commit()
+
+    return f"Planet {planet_to_delete.name} is deleted", 200
