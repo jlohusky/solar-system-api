@@ -16,11 +16,16 @@ planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
 
 @planets_bp.route("", methods=['GET'])
 def handle_planets():
-    all_planets = Planet.query.all()
+    name_query = request.args.get("name")
+    is_planet_query = request.args.get("is_planet")
+    if name_query:
+        planets = Planet.query.filter_by(name=name_query)
+    elif is_planet_query:
+        planets = Planet.query.filter_by(is_planet=is_planet_query)
+    else:
+        planets = Planet.query.all()
 
-    planet_response = []
-    for planet in all_planets:
-        planet_response.append(planet.to_dict())
+    planet_response = [planet.to_dict() for planet in planets]
     return jsonify(planet_response), 200
 
 @planets_bp.route("/<planet_id>", methods=['GET'])
