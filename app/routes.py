@@ -2,15 +2,15 @@ from flask import Blueprint, jsonify, abort, make_response, request
 from app.models.planet import Planet
 from app import db
 
-def validate_planet(planet_id):
+def get_valid_item_by_id(model, model_id):
     try:
-        planet_id = int(planet_id)
+        model_id = int(model_id)
     except:
-        abort(make_response({'msg': f"invalid id {planet_id}"}, 400))
+        abort(make_response({'msg': f"invalid id {model_id}"}, 400))
     
-    planet = Planet.query.get(planet_id)
+    item = model.query.get(model_id)
     
-    return planet if planet else abort(make_response({'msg': f"No planet with id {planet_id}"}, 404))
+    return item if item else abort(make_response({'msg': f"No {model.__name__} with id {model_id}"}, 404))
 
 planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
 
@@ -30,14 +30,8 @@ def handle_planets():
 
 @planets_bp.route("/<planet_id>", methods=['GET'])
 def handle_planet(planet_id):
-    planet = validate_planet(planet_id)
-    
-    return {
-        "id": planet.id,
-        "name": planet.name,
-        "description": planet.description,
-        "is_planet": planet.is_planet
-    }, 200
+    planet = get_valid_item_by_id(Planet, planet_id) 
+    return planet.to_dict(), 200
 
 @planets_bp.route("", methods=['POST'])
 def create_planet():
@@ -47,18 +41,13 @@ def create_planet():
     db.session.add(new_planet)
     db.session.commit()
 
-    return {
-        "id": new_planet.id,
-        "name": new_planet.name,
-        "description": new_planet.description,
-        "is_planet": new_planet.is_planet
-    }, 201
+    return new_planet.to_dict(), 201
 
 @planets_bp.route("/<planet_id>", methods=['PUT'])
 def update_one_planet(planet_id):
     request_body = request.get_json()
 
-    planet_to_update = validate_planet(planet_id)
+    planet_to_update = get_valid_item_by_id(Planet, planet_id)
 
     planet_to_update.name = request_body["name"]
     planet_to_update.description = request_body["description"]
@@ -70,7 +59,7 @@ def update_one_planet(planet_id):
 
 @planets_bp.route("/<planet_id>", methods=['DELETE'])
 def delete_one_planet(planet_id):
-    planet_to_delete = validate_planet(planet_id)
+    planet_to_delete = get_valid_item_by_id(Planet, planet_id)
 
     db.session.delete(planet_to_delete)
     db.session.commit()
