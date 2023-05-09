@@ -50,4 +50,4 @@ def test_post_one_planet_create_planet_in_db(client):
     assert response.status_code == 201
     assert response_body["name"] == "Pluto"
     assert response_body["description"] == "Poor Pluto!"
-    assert response_body["is_planet"] == False
+    assert response_body["is_planet"] == False 
